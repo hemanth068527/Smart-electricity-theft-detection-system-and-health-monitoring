@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Electricity Theft & Transformer Health Monitoring</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .card {
+      background: #ffffff;
+      color: #333;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+
+    .value {
+      font-size: 32px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .unit {
+      font-size: 14px;
+      color: #777;
+    }
+
+    .status {
+      margin-top: 30px;
+      padding: 20px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+      border-radius: 15px;
+    }
+
+    .normal {
+      background: #2ecc71;
+    }
+
+    .theft {
+      background: #e74c3c;
+    }
+
+    /* Transformer Health Colors */
+    .health-good {
+      background: #27ae60;
+      color: white;
+      border-radius: 10px;
+      padding: 5px;
+    }
+
+    .health-warn {
+      background: #f39c12;
+      color: white;
+      border-radius: 10px;
+      padding: 5px;
+    }
+
+    .health-bad {
+      background: #c0392b;
+      color: white;
+      border-radius: 10px;
+      padding: 5px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>⚡ Smart Electricity Theft Monitoring</h1>
+<p style="text-align:center;">Live Data from ThingSpeak Cloud</p>
+
+<div class="grid">
+
+  <div class="card">
+    <h3>🔌 Transformer Current</h3>
+    <div class="value" id="transformer">--</div>
+    <div class="unit">Amps</div>
+  </div>
+
+  <div class="card">
+    <h3>🩺 Transformer Health</h3>
+    <div class="value" id="health">--</div>
+    <div class="unit">Condition</div>
+  </div>
+
+  <div class="card">
+    <h3>🏠 House 1 Current</h3>
+    <div class="value" id="house1">--</div>
+    <div class="unit">Amps</div>
+  </div>
+
+  <div class="card">
+    <h3>🏠 House 2 Current</h3>
+    <div class="value" id="house2">--</div>
+    <div class="unit">Amps</div>
+  </div>
+
+  <div class="card">
+    <h3>⚠ Unmetered Current</h3>
+    <div class="value" id="diff">--</div>
+    <div class="unit">Amps</div>
+  </div>
+
+</div>
+
+<div id="statusBox" class="status">
+  STATUS
+</div>
+
+<div class="footer">
+  ESP32 | ACS712 | ZMCT103C | ThingSpeak | Hackathon Project
+</div>
+
+<script>
+  /* ===== THINGSPEAK DETAILS ===== */
+  const CHANNEL_ID = "3236533";
+  const READ_API_KEY = "X9QA1LSCASFB7N60";
+
+  const url =
+    "https://api.thingspeak.com/channels/" + CHANNEL_ID +
+    "/feeds/last.json?api_key=" + READ_API_KEY;
+
+  async function fetchData() {
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const tr = parseFloat(data.field1);
+      const h1 = parseFloat(data.field2);
+      const h2 = parseFloat(data.field3);
+      const diff = parseFloat(data.field4);
+      const status = data.field5;
+
+      document.getElementById("transformer").innerText = tr.toFixed(2);
+      document.getElementById("house1").innerText = h1.toFixed(2);
+      document.getElementById("house2").innerText = h2.toFixed(2);
+      document.getElementById("diff").innerText = diff.toFixed(2);
+
+      /* ===== TRANSFORMER HEALTH LOGIC ===== */
+      const healthBox = document.getElementById("health");
+
+      if (tr < 5) {
+        healthBox.innerText = "GOOD";
+        healthBox.className = "value health-good";
+      } 
+      else if (tr >= 5 && tr < 8) {
+        healthBox.innerText = "CHECK SOON";
+        healthBox.className = "value health-warn";
+      } 
+      else {
+        healthBox.innerText = "NEED MAINTENANCE";
+        healthBox.className = "value health-bad";
+      }
+
+      /* ===== THEFT STATUS ===== */
+      const statusBox = document.getElementById("statusBox");
+
+      if (status === "1") {
+        statusBox.innerText = "🚨 ELECTRICITY THEFT DETECTED";
+        statusBox.className = "status theft";
+      } else {
+        statusBox.innerText = "✅ NORMAL OPERATION";
+        statusBox.className = "status normal";
+      }
+
+    } catch (error) {
+      console.error("Error fetching ThingSpeak data:", error);
+    }
+  }
+
+  fetchData();
+  setInterval(fetchData, 15000); // refresh every 15 seconds
+</script>
+
+</body>
+</html>
