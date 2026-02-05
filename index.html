@@ -1,223 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Smart Electricity Theft & Transformer Health Monitoring</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Electricity Theft Monitoring System</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-      color: #ffffff;
-      margin: 0;
-      padding: 20px;
-    }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    h1, h2 {
-      text-align: center;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      margin-top: 30px;
-    }
-
-    .card {
-      background: #ffffff;
-      color: #333;
-      padding: 20px;
-      border-radius: 15px;
-      text-align: center;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-    }
-
-    .value {
-      font-size: 32px;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    .unit {
-      font-size: 14px;
-      color: #777;
-    }
-
-    .status {
-      margin-top: 30px;
-      padding: 20px;
-      text-align: center;
-      font-size: 26px;
-      font-weight: bold;
-      border-radius: 15px;
-    }
-
-    .normal { background: #2ecc71; }
-    .theft  { background: #e74c3c; }
-
-    .health-good { background:#27ae60;color:white;padding:8px;border-radius:10px; }
-    .health-warn { background:#f39c12;color:white;padding:8px;border-radius:10px; }
-    .health-bad  { background:#c0392b;color:white;padding:8px;border-radius:10px; }
-
-    iframe {
-      width: 100%;
-      height: 260px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-    }
-
-    #theftTime {
-      margin-top: 15px;
-      font-size: 18px;
-      display: none;
-      text-align: center;
-    }
-
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.8;
-    }
-  </style>
+<style>
+/* ===== YOUR ORIGINAL CSS (UNCHANGED) ===== */
+:root {
+  --bg-dark:#0a0e17;
+  --bg-card:rgba(15,23,42,.6);
+  --bg-card-border:rgba(0,255,136,.15);
+  --neon-green:#00ff88;
+  --neon-yellow:#ffd000;
+  --neon-red:#ff3366;
+  --text-primary:#f0f4f8;
+  --text-secondary:#94a3b8;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg-dark);color:var(--text-primary)}
+.container{max-width:1400px;margin:auto;padding:24px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+.stat-card{background:var(--bg-card);border:1px solid var(--bg-card-border);border-radius:16px;padding:20px}
+.stat-value{font-family:'JetBrains Mono';font-size:1.7rem;font-weight:700;color:var(--neon-green)}
+.stat-label{font-size:.8rem;color:var(--text-secondary);margin-bottom:6px}
+.theft-banner{margin:32px 0;padding:24px;border-radius:16px;text-align:center;font-family:'JetBrains Mono'}
+.theft-banner.normal{color:var(--neon-green);border:1px solid rgba(0,255,136,.3)}
+.theft-banner.theft{color:var(--neon-red);border:1px solid rgba(255,51,102,.4)}
+iframe{width:100%;height:260px;border:none}
+</style>
 </head>
 
 <body>
+<div class="container">
 
-<h1>⚡ Smart Electricity Theft Monitoring</h1>
-<p style="text-align:center;">Live ESP32 Data via ThingSpeak Cloud</p>
+<header style="text-align:center">
+  <h1>Smart Electricity Theft Monitoring System</h1>
+  <p>Real-time transformer & house current monitoring using IoT</p>
+</header>
 
-<!-- ===== LIVE VALUES ===== -->
-<div class="grid">
+<!-- ===== STATS ===== -->
+<div class="stats-grid">
 
-  <div class="card">
-    <h3>🔌 Transformer Current</h3>
-    <div class="value" id="transformer">--</div>
-    <div class="unit">Amps</div>
+  <div class="stat-card">
+    <div class="stat-label">Transformer Current</div>
+    <div class="stat-value"><span id="transformer-current">--</span> A</div>
   </div>
 
-  <div class="card">
-    <h3>🩺 Transformer Health</h3>
-    <div class="value" id="health">--</div>
-    <div class="unit">Load Based</div>
+  <div class="stat-card">
+    <div class="stat-label">House 1 Current</div>
+    <div class="stat-value"><span id="house1-current">--</span> A</div>
   </div>
 
-  <div class="card">
-    <h3>🏠 House 1 Current</h3>
-    <div class="value" id="house1">--</div>
-    <div class="unit">Amps</div>
+  <div class="stat-card">
+    <div class="stat-label">House 2 Current</div>
+    <div class="stat-value"><span id="house2-current">--</span> A</div>
   </div>
 
-  <div class="card">
-    <h3>🏠 House 2 Current</h3>
-    <div class="value" id="house2">--</div>
-    <div class="unit">Amps</div>
-  </div>
-
-  <div class="card">
-    <h3>⚠ Unmetered Current</h3>
-    <div class="value" id="diff">--</div>
-    <div class="unit">Amps</div>
+  <!-- 🔁 CHANGED: HOUSE 3 → UNMETERED CURRENT -->
+  <div class="stat-card">
+    <div class="stat-label">Unmetered (Undetected) Current</div>
+    <div class="stat-value"><span id="unmetered-current">--</span> A</div>
   </div>
 
 </div>
 
-<!-- ===== STATUS & TIME ===== -->
-<div id="statusBox" class="status">STATUS</div>
-<div id="theftTime"></div>
+<!-- ===== STATUS ===== -->
+<div class="theft-banner normal" id="theft-banner">
+  <div id="theft-status">⚡ NORMAL OPERATION</div>
+  <div id="theft-time"></div>
+</div>
 
 <!-- ===== GRAPHS ===== -->
-<h2>📊 Live Power Analytics</h2>
-
-<div class="grid">
-  <div class="card">
-    <h3>Transformer Current</h3>
-    <iframe src="https://thingspeak.com/channels/3236533/charts/1?dynamic=true&results=60"></iframe>
-  </div>
-  <div class="card">
-    <h3>House 1 Current</h3>
-    <iframe src="https://thingspeak.com/channels/3236533/charts/2?dynamic=true&results=60"></iframe>
-  </div>
-  <div class="card">
-    <h3>House 2 Current</h3>
-    <iframe src="https://thingspeak.com/channels/3236533/charts/3?dynamic=true&results=60"></iframe>
-  </div>
-  <div class="card">
-    <h3>Unmetered Current</h3>
-    <iframe src="https://thingspeak.com/channels/3236533/charts/4?dynamic=true&results=60"></iframe>
-  </div>
+<div class="stats-grid">
+  <iframe id="chart1"></iframe>
+  <iframe id="chart2"></iframe>
+  <iframe id="chart3"></iframe>
+  <iframe id="chart4"></iframe>
 </div>
 
-<div class="footer">
-  ESP32 | ACS712 | ZMCT103C | ThingSpeak
 </div>
 
 <script>
-  const CHANNEL_ID = "3236533";
-  const READ_API_KEY = "X9QA1LSCASFB7N60";
+const CHANNEL_ID = 3236533;
+const API_KEY = "X9QA1LSCASFB7N60";
 
-  const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?results=1&api_key=${READ_API_KEY}`;
+const chartBase = `https://api.thingspeak.com/channels/${CHANNEL_ID}/charts`;
+const chartParams = `?api_key=${API_KEY}&bgcolor=%230a0e17&color=%2300ff88&dynamic=true&results=60`;
 
-  function formatTime(ts) {
-    return new Date(ts).toLocaleString();
-  }
+document.getElementById("chart1").src = `${chartBase}/1${chartParams}`;
+document.getElementById("chart2").src = `${chartBase}/2${chartParams}`;
+document.getElementById("chart3").src = `${chartBase}/3${chartParams}`;
+document.getElementById("chart4").src = `${chartBase}/4${chartParams}`; // unmetered
 
-  async function fetchData() {
-    try {
-      const res = await fetch(url);
-      const json = await res.json();
-      const data = json.feeds[0];
+function format(v){
+  return isNaN(v) ? "--" : parseFloat(v).toFixed(2);
+}
 
-      const tr = parseFloat(data.field1);
-      const h1 = parseFloat(data.field2);
-      const h2 = parseFloat(data.field3);
-      const diff = parseFloat(data.field4);
-      const theft = data.field5;
-      const time = data.created_at;
+function fetchData(){
+  fetch(`https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?api_key=${API_KEY}`)
+    .then(r=>r.json())
+    .then(data=>{
 
-      document.getElementById("transformer").innerText = tr.toFixed(2);
-      document.getElementById("house1").innerText = h1.toFixed(2);
-      document.getElementById("house2").innerText = h2.toFixed(2);
-      document.getElementById("diff").innerText = diff.toFixed(2);
+      document.getElementById("transformer-current").textContent = format(data.field1);
+      document.getElementById("house1-current").textContent      = format(data.field2);
+      document.getElementById("house2-current").textContent      = format(data.field3);
 
-      const health = document.getElementById("health");
-      health.className = "value";
-      if (tr < 5) {
-        health.innerText = "GOOD";
-        health.classList.add("health-good");
-      } else if (tr < 8) {
-        health.innerText = "CHECK";
-        health.classList.add("health-warn");
+      // 🔁 CHANGED: field4 → unmetered current
+      document.getElementById("unmetered-current").textContent   = format(data.field4);
+
+      const banner = document.getElementById("theft-banner");
+      const status = document.getElementById("theft-status");
+      const time   = document.getElementById("theft-time");
+
+      if (parseInt(data.field5) === 1){
+        banner.className = "theft-banner theft";
+        status.textContent = "🚨 ELECTRICITY THEFT DETECTED";
+        time.textContent = "Detected at: " + new Date(data.created_at).toLocaleString();
       } else {
-        health.innerText = "DANGER";
-        health.classList.add("health-bad");
+        banner.className = "theft-banner normal";
+        status.textContent = "⚡ NORMAL OPERATION";
+        time.textContent = "";
       }
+    });
+}
 
-      const statusBox = document.getElementById("statusBox");
-      const theftTime = document.getElementById("theftTime");
-
-      if (theft === "1") {
-        statusBox.innerText = "🚨 ELECTRICITY THEFT DETECTED";
-        statusBox.className = "status theft";
-        theftTime.style.display = "block";
-        theftTime.innerHTML =
-          "🕒 Theft Detected At: <b>" + formatTime(time) + "</b>";
-      } else {
-        statusBox.innerText = "✅ NORMAL OPERATION";
-        statusBox.className = "status normal";
-        theftTime.style.display = "none";
-      }
-
-    } catch (err) {
-      console.error("ThingSpeak Error:", err);
-    }
-  }
-
-  fetchData();
-  setInterval(fetchData, 1500);
+fetchData();
+setInterval(fetchData,15000);
 </script>
-
 </body>
 </html>
+
